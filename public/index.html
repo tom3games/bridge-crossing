@@ -4,32 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>橋を渡れ！ みんなで渡る崩れる吊り橋</title>
-<meta name="description" content="崩れやすい吊り橋を、みんなで同時に渡る。急ぐと割れる、慎重すぎると時間切れ。1〜100人。リンクを送るだけでスマホから遊べる。">
+<meta name="description" content="崩れやすい吊り橋を、みんなで同時に渡る3Dパーティゲーム。急ぐと割れる、慎重すぎると時間切れ。丸太・突風・落石・凍った板・燃える板。1〜100人。リンクを送るだけでスマホから遊べる。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="橋を渡れ！ みんなで渡る崩れる吊り橋">
-<meta property="og:description" content="崩れやすい吊り橋を、みんなで同時に渡る。急ぐと割れる、慎重すぎると時間切れ。1〜100人。リンクを送るだけでスマホから遊べる。">
+<meta property="og:description" content="急ぐと割れる、慎重すぎると時間切れ。丸太も突風も落石もある吊り橋を、みんなで同時に渡る。1〜100人、スマホでリンクから参加。">
 <meta property="og:site_name" content="橋を渡れ！">
-<meta name="twitter:title" content="橋を渡れ！">
-<meta name="twitter:description" content="崩れやすい吊り橋を、みんなで同時に渡る。急ぐと割れる、慎重すぎると時間切れ。1〜100人。リンクを送るだけでスマホから遊べる。">
-<meta name="twitter:image" content="/og.png">
+<meta property="og:image" content="/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image" content="/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0f1d22">
+<meta name="twitter:title" content="橋を渡れ！">
+<meta name="twitter:description" content="急ぐと割れる、慎重すぎると時間切れ。みんなで渡る崩れる吊り橋。1〜100人。">
+<meta name="twitter:image" content="/og.png">
+<meta name="theme-color" content="#1d3b4a">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=RocknRoll+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
 <link rel="stylesheet" href="/style.css">
 <script>
   // 起動に失敗したときに原因を画面に出す（module の読み込み自体が失敗すると中の catch は動かないため、素の script で拾う）
   window.__errs = []
   window.addEventListener('error', e => window.__errs.push(e.message || String(e)))
   window.addEventListener('unhandledrejection', e => window.__errs.push(String(e.reason)))
-  setTimeout(() => {
+  // 遅い回線では 3D の読み込みに時間がかかるので、エラーが出たとき（8秒）か、20秒たっても起動しないときだけ出す。後から起動できたら app.js が消す
+  const showBootErr = () => {
     if (window.__boot) return
     const d = document.getElementById('bootErr')
     d.hidden = false
     d.textContent = '起動できませんでした: ' + (window.__errs.join(' / ') || '読み込み失敗') + ' / ' + navigator.userAgent
-  }, 5000)
+  }
+  setTimeout(() => { if (window.__errs.length) showBootErr() }, 8000)
+  setTimeout(showBootErr, 20000)
   // 拡大を止める（iOS は viewport の指定を無視するので、ピンチ・ダブルタップ・Ctrl+ホイールを直接止める）
   ;(() => {
     const stop = e => e.preventDefault()
@@ -38,7 +44,7 @@
     let lastEnd = 0
     document.addEventListener('touchend', e => {
       const now = Date.now()
-      if (now - lastEnd < 350 && !e.target.closest('input,button,summary,a')) e.preventDefault()
+      if (now - lastEnd < 350 && !e.target.closest('input,button,summary,label,a')) e.preventDefault()
       lastEnd = now
     }, { passive: false })
     document.addEventListener('dblclick', stop, { passive: false })
@@ -47,68 +53,147 @@
   })()
 </script>
 </head>
-<body>
+<body data-screen="home">
+<!-- 背景: 夕方の谷にかかる吊り橋 -->
+<div class="scenery" aria-hidden="true">
+  <!-- 縦持ちでは真ん中の 400 幅、横持ちでは下の方が見える（xMidYMax slice） -->
+  <svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMax slice">
+    <defs>
+      <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a8fd0"/><stop offset=".5" stop-color="#8fd0f0"/><stop offset=".78" stop-color="#ffe2a8"/></linearGradient>
+      <linearGradient id="valG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a4a32"/><stop offset="1" stop-color="#2a1a12"/></linearGradient>
+      <linearGradient id="rivG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fc0e0"/><stop offset="1" stop-color="#2f7fa8"/></linearGradient>
+    </defs>
+    <rect width="800" height="800" fill="url(#skyG)"/>
+    <circle cx="560" cy="440" r="40" fill="#fff6c8" opacity=".9"/>
+    <g fill="#fff" opacity=".85"><ellipse cx="270" cy="120" rx="46" ry="14"/><ellipse cx="300" cy="110" rx="30" ry="16"/><ellipse cx="500" cy="200" rx="40" ry="12"/><ellipse cx="522" cy="191" rx="24" ry="13"/><ellipse cx="90" cy="300" rx="50" ry="14"/><ellipse cx="700" cy="330" rx="44" ry="13"/></g>
+    <path d="M0 500l70-40 60 34 70-50 50 30 64-72 60 58 46-34 62 52 78-60 60 40 70-46 60 50 50-20v458H0z" fill="#7d9fc6" opacity=".7"/>
+    <path d="M0 576l60-30 60 20 60-24 40 24 50 22 60-40 70 44 50-26 64 30 66-22 60 26 60-30 60 22v208H0z" fill="#5f9e4a"/>
+    <g fill="#2f8a46"><path d="M84 566l12-34 12 34z"/><path d="M130 572l10-28 10 28z"/><path d="M224 560l12-34 12 34z"/><path d="M252 566l10-28 10 28z"/><path d="M530 556l12-36 12 36z"/><path d="M560 562l10-28 10 28z"/><path d="M500 566l9-24 9 24z"/><path d="M660 566l12-34 12 34z"/><path d="M700 572l10-28 10 28z"/></g>
+    <g transform="translate(0 52)">
+    <path d="M0 640h350l-14 160H0z" fill="url(#valG)"/><path d="M450 640h350v160H464z" fill="url(#valG)"/>
+    <path d="M0 634h352l-2 12H0zM448 634h352v12H450z" fill="#6fb04a"/>
+    <path d="M336 800l14-150h100l14 150z" fill="url(#rivG)" opacity=".9"/>
+    <path d="M360 760q20-6 40 0t40 0M350 784q25-6 50 0t50 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/>
+    <path d="M340 636q60 34 120 0" fill="none" stroke="#3a2416" stroke-width="2.4"/>
+    <path d="M340 618q60 30 120 0" fill="none" stroke="#c9a46a" stroke-width="2"/>
+    <g fill="#c08a52" stroke="#3a2416" stroke-width="1">
+      <rect x="346" y="639" width="10" height="5"/><rect x="358" y="643" width="10" height="5"/><rect x="370" y="646" width="10" height="5"/><rect x="382" y="648" width="10" height="5"/>
+      <rect x="408" y="648" width="10" height="5"/><rect x="420" y="646" width="10" height="5"/><rect x="432" y="643" width="10" height="5"/><rect x="444" y="639" width="10" height="5"/>
+    </g>
+    <path d="M340 640v-24M460 640v-24" stroke="#5a3a20" stroke-width="4"/>
+    <circle cx="364" cy="633" r="4" fill="#ff7a45" stroke="#2a170c"/><circle cx="426" cy="636" r="4" fill="#3fb6ff" stroke="#2a170c"/><circle cx="440" cy="632" r="4" fill="#ffd23f" stroke="#2a170c"/>
+    <path d="M396 652l-3 14M404 652l4 12" stroke="#3a2416" stroke-width="1.5"/>
+    <g fill="#2f8a46"><path d="M40 640l14-40 14 40z"/><path d="M90 640l10-30 10 30z"/><path d="M700 640l14-40 14 40z"/><path d="M750 640l10-30 10 30z"/><path d="M620 640l10-28 10 28z"/></g>
+    </g>
+  </svg>
+</div>
 <div id="bootErr" class="boot-err" hidden></div>
 
 <header class="top">
-  <span class="logo" id="logo"><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M2 6q14 10 28 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M7 10v5M12 12v5M17 12.5v5M22 12v5M27 10v5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>橋を渡れ！</span>
+  <span class="mini-logo"><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M2 5q14 11 28 0" fill="none" stroke="#ffd36b" stroke-width="2.6" stroke-linecap="round"/><path d="M8 9v6M13 11v6M19 11v6M24 9v6" stroke="#ffb35c" stroke-width="3" stroke-linecap="round"/></svg>橋を渡れ！</span>
   <span class="net" id="net" data-s="connecting">接続しています</span>
 </header>
 
 <main>
-  <section id="home" class="card" hidden>
-    <h1 id="homeTitle">橋を渡れ！</h1>
-    <p id="homeLead" class="lead">崩れやすい吊り橋を、みんなで同時に渡る。急ぐと割れる。慎重すぎると時間切れ。</p>
-    <label class="field">ニックネーム
-      <input id="name" maxlength="12" autocomplete="nickname" placeholder="例: たろう" enterkeyhint="done">
-    </label>
-    <button id="createBtn" class="primary">部屋を作る</button>
-    <details id="joinBox">
-      <summary>参加コードで入る</summary>
-      <div class="row">
-        <input id="code" maxlength="4" inputmode="latin" autocapitalize="characters" placeholder="ABCD" aria-label="参加コード">
-        <button id="joinBtn">参加</button>
-      </div>
-    </details>
-    <div id="howto" class="howto">
-      <p class="howto-h">遊び方（1〜100人・1分前後）</p>
-      <ul>
-        <li><b>ドラッグ</b>で歩く。<b>走る</b>を押すと速いが板が傷む</li>
-        <li>同じ板に人が集まると割れる。区間ごとにも重さの上限がある</li>
-        <li><b>突風</b>の区間では止まる。動くと重さ3倍</li>
-        <li>穴に落ちたらスタートからやり直し</li>
-        <li>時間内に<b>7割がゴール</b>でチーム成功。個人は着順</li>
-      </ul>
+  <section id="home" class="screen" hidden>
+    <div class="hero">
+      <svg class="logo" viewBox="0 0 420 210" role="img" aria-label="橋を渡れ！">
+        <defs>
+          <linearGradient id="lgT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".5" stop-color="#ffc23a"/><stop offset="1" stop-color="#ff7a1f"/></linearGradient>
+          <linearGradient id="lgP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9a35e"/><stop offset="1" stop-color="#8a5629"/></linearGradient>
+        </defs>
+        <!-- 吊り橋の綱 -->
+        <path d="M10 40q200 70 400 0" fill="none" stroke="#2a170c" stroke-width="10" stroke-linecap="round"/>
+        <path d="M10 40q200 70 400 0" fill="none" stroke="#c98b45" stroke-width="5" stroke-linecap="round"/>
+        <g stroke="#2a170c" stroke-width="3">
+          <path d="M62 56v50M118 70v48M174 77v44M246 77v44M302 70v48M358 56v50"/>
+        </g>
+        <!-- 板（文字の台） -->
+        <g fill="url(#lgP)" stroke="#2a170c" stroke-width="5" stroke-linejoin="round">
+          <rect x="22" y="96" width="92" height="96" rx="8" transform="rotate(-5 68 144)"/>
+          <rect x="118" y="104" width="92" height="92" rx="8" transform="rotate(3 164 150)"/>
+          <rect x="214" y="104" width="92" height="92" rx="8" transform="rotate(-2 260 150)"/>
+          <rect x="310" y="94" width="92" height="98" rx="8" transform="rotate(6 356 143)"/>
+        </g>
+        <path d="M246 112l14 26-8 18 10 30" fill="none" stroke="#2a170c" stroke-width="4" stroke-linecap="round"/>
+        <g font-family="RocknRoll One, Zen Maru Gothic, Hiragino Maru Gothic ProN, sans-serif" font-size="74" text-anchor="middle" paint-order="stroke" stroke="#2a170c" stroke-width="10" stroke-linejoin="round" fill="url(#lgT)">
+          <text x="68" y="172" transform="rotate(-5 68 144)">橋</text>
+          <text x="164" y="176" transform="rotate(3 164 150)">を</text>
+          <text x="260" y="176" transform="rotate(-2 260 150)">渡</text>
+          <text x="356" y="170" transform="rotate(6 356 143)">れ</text>
+        </g>
+        <g transform="translate(398 52) rotate(14)"><rect x="-9" y="-34" width="18" height="44" rx="9" fill="#ff5a3c" stroke="#2a170c" stroke-width="5"/><circle cx="0" cy="26" r="9" fill="#ff5a3c" stroke="#2a170c" stroke-width="5"/></g>
+      </svg>
+      <p class="tagline">急ぐと割れる。慎重すぎると時間切れ。</p>
+      <p class="career" id="career" hidden></p>
+    </div>
+    <div class="card">
+      <label class="field"><span>ニックネーム</span>
+        <input id="name" maxlength="12" autocomplete="nickname" placeholder="例: たろう" enterkeyhint="done">
+      </label>
+      <button id="createBtn" class="btn primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>部屋を作る</button>
+      <details id="joinBox">
+        <summary>参加コードで入る</summary>
+        <div class="row">
+          <input id="code" maxlength="4" inputmode="latin" autocapitalize="characters" placeholder="ABCD" aria-label="参加コード">
+          <button id="joinBtn" class="btn">参加</button>
+        </div>
+      </details>
+      <button id="howBtn" class="btn ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.7M12 17.2v.3"/></svg>遊び方</button>
     </div>
   </section>
 
-  <section id="lobby" class="card" hidden>
-    <p class="muted">参加コード</p>
-    <p class="code" id="roomCode"></p>
-    <div class="row">
-      <input id="invite" readonly aria-label="招待URL">
-      <button id="copyBtn">招待</button>
+  <section id="lobby" class="screen" hidden>
+    <div class="card lobby">
+      <div class="lobby-top">
+        <div><p class="muted">参加コード</p><p class="code" id="roomCode"></p></div>
+        <p class="count" id="count"></p>
+      </div>
+      <div class="row">
+        <input id="invite" readonly aria-label="招待URL">
+        <button id="copyBtn" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>招待</button>
+      </div>
+      <ul id="players" class="players"></ul>
+      <div class="pick" id="coursePick"></div>
+      <p id="lobbyHint" class="hint"></p>
+      <div class="row actions">
+        <button id="leaveBtn" class="btn ghost">部屋を出る</button>
+        <button id="startBtn" class="btn primary grow" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l12 8-12 8z"/></svg>スタート</button>
+      </div>
     </div>
-    <p class="muted"><span id="count"></span></p>
-    <ul id="players" class="players"></ul>
-    <p id="lobbyHint" class="hint"></p>
-    <button id="startBtn" class="primary" hidden>スタート</button>
-    <button id="leaveBtn" class="ghost">部屋を出る</button>
   </section>
 
   <section id="game" hidden>
     <div id="stage" class="stage"></div>
-    <button id="quitBtn" class="ghost small quit">退出</button>
+    <button id="quitBtn" class="icon-btn quit" aria-label="退出"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg></button>
   </section>
 
-  <section id="result" class="card" hidden>
-    <h2 id="resultTitle" class="result-title"></h2>
-    <div id="resultBody"></div>
-    <p id="resultHint" class="hint"></p>
-    <button id="rematchBtn" class="primary" hidden>もう一回</button>
-    <button id="lobbyBtn" class="ghost" hidden>ロビーに戻る</button>
+  <section id="result" class="screen" hidden>
+    <div class="card result">
+      <h2 id="resultTitle" class="result-title"></h2>
+      <div id="resultBody"></div>
+      <p id="resultHint" class="hint"></p>
+      <div class="row actions">
+        <button id="lobbyBtn" class="btn ghost" hidden>橋を選ぶ</button>
+        <button id="rematchBtn" class="btn primary grow" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>もう一回</button>
+      </div>
+    </div>
   </section>
 </main>
+
+<div id="howto" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="howtoTitle">
+  <div class="card modal-card">
+    <p class="modal-head" id="howtoTitle">遊び方<span>1〜100人・1〜3分</span></p>
+    <ol class="steps">
+      <li><svg viewBox="0 0 80 64" aria-hidden="true"><rect x="4" y="34" width="72" height="12" rx="3" fill="#b98148" stroke="#2a170c" stroke-width="3"/><path d="M28 34h0M40 34v12M52 34v12M28 34v12" stroke="#2a170c" stroke-width="2"/><circle cx="34" cy="18" r="10" fill="#ffd9b0" stroke="#2a170c" stroke-width="3"/><path d="M48 18h18M60 12l6 6-6 6" fill="none" stroke="#ff7a1f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="54" r="7" fill="none" stroke="#fff" stroke-width="3"/><circle cx="20" cy="51" r="3" fill="#fff"/></svg><p><b>ドラッグで歩く</b>画面のどこでも指を置いてずらす。走るボタンは押すと入りっぱなし</p></li>
+      <li><svg viewBox="0 0 80 64" aria-hidden="true"><rect x="8" y="30" width="30" height="14" rx="2" fill="#b98148" stroke="#2a170c" stroke-width="3"/><rect x="42" y="30" width="30" height="14" rx="2" fill="#7a4a24" stroke="#2a170c" stroke-width="3"/><path d="M50 30l6 7-4 7" fill="none" stroke="#2a170c" stroke-width="2.5"/><circle cx="50" cy="20" r="7" fill="#3fb6ff" stroke="#2a170c" stroke-width="2.5"/><circle cx="62" cy="20" r="7" fill="#ff7a45" stroke="#2a170c" stroke-width="2.5"/><circle cx="56" cy="10" r="7" fill="#ffd23f" stroke="#2a170c" stroke-width="2.5"/><path d="M60 52h12" stroke="#e8553d" stroke-width="4" stroke-linecap="round"/><text x="22" y="58" text-anchor="middle" font-size="12" font-weight="900" fill="#fff">OK</text><text x="66" y="62" text-anchor="middle" font-size="12" font-weight="900" fill="#ffb0a0">!</text></svg><p><b>同じ板に3人で割れる</b>走ると板が傷む。ひびの板と、区間に人が多すぎるのに注意</p></li>
+      <li><svg viewBox="0 0 80 64" aria-hidden="true"><path d="M40 4v18" stroke="#2a170c" stroke-width="3"/><rect x="22" y="22" width="36" height="14" rx="7" fill="#9a6232" stroke="#2a170c" stroke-width="3"/><path d="M6 48h16M10 56h20" stroke="#bfe6ff" stroke-width="4" stroke-linecap="round"/><ellipse cx="60" cy="52" rx="12" ry="5" fill="#000" opacity=".35"/><circle cx="60" cy="36" r="8" fill="#8a7a6a" stroke="#2a170c" stroke-width="3"/></svg><p><b>丸太・突風・落石</b>丸太は振れる向きに飛ばされる。突風の予告が出たら止まる。影の上から逃げる</p></li>
+      <li><svg viewBox="0 0 80 64" aria-hidden="true"><path d="M8 54V14M8 16h30l-8 9 8 9H8" fill="#3fe0a0" stroke="#2a170c" stroke-width="3" stroke-linejoin="round"/><circle cx="54" cy="30" r="12" fill="#ffd23f" stroke="#2a170c" stroke-width="3"/><path d="M48 30l4 4 8-8" fill="none" stroke="#2a170c" stroke-width="3" stroke-linecap="round"/><text x="56" y="60" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">7割</text></svg><p><b>7割が渡ればチーム成功</b>お守りを拾うと個人の得点。落ちても何度でも戻れる</p></li>
+    </ol>
+    <p class="howto-s">PC: 矢印キー/WASDで歩く、Shiftを押している間は走る、1・2・3で合図</p>
+    <button id="howClose" class="btn primary">わかった</button>
+  </div>
+</div>
 
 <div id="toast" class="toast" role="status" hidden></div>
 <footer class="foot"><span id="ping"></span></footer>

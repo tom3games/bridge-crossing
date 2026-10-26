@@ -6,7 +6,7 @@ import { createGame, meta, RULES, ST, colsFor, needFor, timeFor } from '../lib/g
 function rng(seed = 1) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 } }
 const ps = n => Array.from({ length: n }, (_, i) => ({ id: 'p' + i, name: 'n' + i }))
 // 弱い板と突風を消した、結果がぶれない設定
-const calm = (extra = {}) => ({ rng: rng(7), rules: { weakRate: 0, gustFirst: 1e9, ...extra } })
+const calm = (extra = {}, course) => ({ rng: rng(7), course, rules: { weakRate: 0, gustFirst: 1e9, hazards: false, ...extra } })
 const run = (g, sec) => { for (let t = 0; t < sec; t += 0.05) { g.tick(0.05); g.frame() } }
 const place = (g, id, x, y) => { const p = g._debug.ps.find(p => p.id === id); p.x = x; p.y = y }
 
@@ -121,13 +121,13 @@ test('突風: 予告のあと吹く。吹いている区間で動くと傷み、
     const g = createGame(ps(1), { rng: () => 0.01, rules: { weakRate: 0, gustFirst: 0.1, gustWarn: 0.2, gustBlow: 2 } })
     run(g, RULES.readySec + 0.35)
     assert.equal(g._debug.gust.phase, 2)
-    assert.equal(g._debug.gust.span, 0)
-    assert.deepEqual(g.view().w.slice(0, 2), [0, 2])
-    place(g, 'p0', 1.5, 3.5)
+    assert.equal(g._debug.gust.span, 2, '森の橋で突風が来るのは3つ目の区間だけ')
+    assert.deepEqual(g.view().w.slice(0, 2), [2, 2])
+    place(g, 'p0', 1.5, 2 * 7 + 3.5)
     g.input('p0', { type: 'move', dx: moving ? 0.001 : 0, dy: 0 }) // ほぼ動かないが「動いている」扱い
     g._debug.ps[0].dx = moving ? 0.06 : 0
     run(g, 1)
-    return 1 - g._debug.hp[3 * g._debug.cols + 1]
+    return 1 - g._debug.hp[(2 * 7 + 3) * g._debug.cols + 1]
   }
   const still = mk(false), moving = mk(true)
   assert.ok(still <= RULES.wear + 1e-6, `止まっていれば普段どおりの傷みだけ ${still}`)

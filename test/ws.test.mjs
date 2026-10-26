@@ -146,3 +146,22 @@ test('og:image は来たホスト名の絶対URLで返る', async () => {
     assert.ok(!html2.includes('"><script>'))
   } finally { await srv.close() }
 })
+
+test('ロビーで選んだ橋が参加者にも届き、その橋で始まる', async () => {
+  const srv = await startServer({ port: 0, quiet: true })
+  try {
+    const a = client(srv.port), b = client(srv.port)
+    await a.ready; await b.ready
+    await a.wait(m => m.t === 'welcome'); await b.wait(m => m.t === 'welcome')
+    a.send({ t: 'create', name: 'A' })
+    const { code } = await a.wait(m => m.t === 'joined')
+    b.send({ t: 'join', code, name: 'B' }); await b.wait(m => m.t === 'joined')
+    a.send({ t: 'setup', opts: { course: 'canyon' } })
+    await b.wait(m => m.t === 'state' && m.setup && m.setup.course === 'canyon')
+    a.send({ t: 'start', opts: { course: 'canyon' } })
+    const st = await b.wait(m => m.t === 'state' && m.phase === 'playing')
+    assert.equal(st.game.course, 'canyon')
+    assert.equal(st.game.rows, 42)
+    a.ws.close(); b.ws.close()
+  } finally { await srv.close() }
+})

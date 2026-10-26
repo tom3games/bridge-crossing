@@ -5,7 +5,7 @@ import { RoomManager, LIMITS, cleanName } from '../lib/rooms.mjs'
 import * as realDef from '../lib/game.mjs'
 
 // 弱い板と突風を消して、結果がぶれないようにしたゲーム
-const gameDef = { meta: realDef.meta, createGame: (p, o) => realDef.createGame(p, { ...o, rules: { weakRate: 0, gustFirst: 1e9 } }) }
+const gameDef = { meta: realDef.meta, createGame: (p, o) => realDef.createGame(p, { ...o, rules: { weakRate: 0, gustFirst: 1e9, hazards: false } }) }
 
 function setup() {
   let t = 0
@@ -212,4 +212,23 @@ test('start に渡す opts は文字・数字・真偽値だけになり、rng �
   assert.equal(got.s.length, 40)
   assert.equal(got.n, 3)
   assert.equal(got.b, true)
+})
+
+test('ホストが選んだ橋は全員に見え、スタートするとその橋になる。ホスト以外は選べない。変な値は捨てる', () => {
+  const { m, s, sent, advance } = setup()
+  const a = s(), b = s()
+  const { code } = m.create(a, 'A')
+  m.join(b, code, 'B')
+  assert.equal(m.setup(b, { course: 'snow' }).error, 'not_host')
+  assert.equal(m.setup(a, { course: 'snow', evil: '<script>', Bad: 'x', n: 5 }).ok, true)
+  assert.deepEqual(m.rooms.get(code).setup, { course: 'snow' })
+  const last = sent.filter(([id, msg]) => id === b && msg.t === 'state').pop()[1]
+  assert.deepEqual(last.setup, { course: 'snow' })
+  m.start(a)
+  assert.equal(m.rooms.get(code).game.view().course, 'snow')
+  // 再戦で別の橋を渡す
+  for (let i = 0; i < 1200 && m.rooms.get(code).phase === 'playing'; i++) advance(100)
+  assert.equal(m.rooms.get(code).phase, 'result')
+  assert.equal(m.rematch(a, { course: 'volcano' }).ok, true)
+  assert.equal(m.rooms.get(code).game.view().course, 'volcano')
 })
