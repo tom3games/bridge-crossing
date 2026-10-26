@@ -92,6 +92,7 @@ node tools/shot-game.mjs [コース] [幅] [高さ]   3D の画面を秒読み�
 node tools/shot-crowd.mjs [人数] [コース]   大人数の 3D 画面を撮る
 node tools/sim.mjs [人数] [回数]   橋ごとの難しさを、そこそこ賢いボットで確かめる
 node tools/load.mjs      負荷試験（下の表）
+node tools/live-check.mjs <公開URL>   chromium と webkit の2人でつなぎ、OGP・起動エラーの誤表示なしを確かめる
 node tools/og.mjs        og.png を作り直す（5人で渡っている 3D の画面にロゴを重ねる）
 ```
 
